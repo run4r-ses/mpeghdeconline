@@ -2,7 +2,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
 
-glue_path = BASE_DIR / "ia_mpeghd_testbench.js"
+glue_path = BASE_DIR / "js"/ "libmpegh" /"ia_mpeghd_testbench.js"
 glue_content = glue_path.read_text()
 
 # patch: add cache bypass

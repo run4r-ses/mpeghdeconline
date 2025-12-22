@@ -233,7 +233,7 @@
                     <details>
                         <summary>Advanced options</summary>
                         <div class="advanced-grid">
-                            <md-outlined-select label="PCM word size" id="pcmSize">
+                            <md-outlined-select label="PCM word size" id="pcmSize" autocomplete="off">
                                 <md-select-option value="">
                                     <div slot="headline">Default</div>
                                 </md-select-option>
@@ -248,7 +248,7 @@
                                 </md-select-option>
                             </md-outlined-select>
 
-                            <md-outlined-select label="Output sample rate" id="sampleRate">
+                            <md-outlined-select label="Output sample rate" id="sampleRate" autocomplete="off">
                                 <md-select-option value="">
                                     <div slot="headline">Native</div>
                                 </md-select-option>
@@ -266,7 +266,7 @@
                             <md-outlined-text-field label="Target loudness (dB)" placeholder="-24" type="number"
                                 id="targetLoudness"></md-outlined-text-field>
 
-                            <md-outlined-select label="DRC effect type" id="drcEffect">
+                            <md-outlined-select label="DRC effect type" id="drcEffect" autocomplete="off">
                                 <md-select-option value="0">
                                     <div slot="headline">None</div>
                                 </md-select-option>
@@ -313,12 +313,12 @@
                             </md-outlined-select>
 
                             <label class="switch-wrapper">
-                                <md-switch id="toggleStderr"></md-switch>
+                                <md-switch id="toggleStderr" autocomplete="off"></md-switch>
                                 <span class="md-typescale-body-large">Print stderr to logs</span>
                             </label>
 
                             <label class="switch-wrapper">
-                                <md-switch id="toggleLogs"></md-switch>
+                                <md-switch id="toggleLogs" autocomplete="off"></md-switch>
                                 <span class="md-typescale-body-large">Display decoder logs</span>
                             </label>
                         </div>

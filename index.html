@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPEG-H 3D Web Decoder</title>
+
+    <link rel="stylesheet" href="theme/light.css">
+    <link rel="stylesheet" href="theme/dark.css" media="(prefers-color-scheme: dark)">
+    <link rel="stylesheet" href="style.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+        rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script type="module">
+        import 'https://esm.run/@material/web/all.js';
+        import { styles as typescaleStyles } from 'https://esm.run/@material/web/typography/md-typescale-styles.js';
+        document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
+    </script>
+    <script type="module" src="js/index.js" defer></script>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1 class="md-typescale-title-bold">MPEG-H 3D Web Decoder</h1>
+
+            <div class="perfbox-widget" id="perfWidget" style="display: none;">
+                <span class="material-symbols-outlined">speed</span>
+                <div>
+                    <div class="perfbox-primary" id="perfPrimary">0 fps</div>
+                    <div class="perfbox-secondary">Real-time speed</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-grid">
+            <div class="column-stack main-col">
+                <div class="card">
+                    <div class="file-area">
+                        <input type="file" id="fileInput" accept=".mp4,.m4a,.mhas" multiple disabled>
+
+                        <span class="material-symbols-outlined" id="fileAreaIcon"
+                            style="font-size: 40px;">upload_file</span>
+
+                        <div class="file-text-wrapper">
+                            <p id="fileNameDisplay" class="md-typescale-title-medium">Select input files</p>
+                            <small class="md-typescale-body-small">Worker is initializing...</small>
+                        </div>
+                    </div>
+
+                    <div id="queueList" class="queue-list" style="display: none;"></div>
+
+                    <div style="display: flex; justify-content: flex-end;">
+                        <md-filled-button id="startBtn"
+                            style="display: none; width: 80px; height: 40px; margin-top: 0px;">
+                            <div style="display: flex;"><md-icon>play_arrow</md-icon></div>
+                        </md-filled-button>
+                    </div>
+
+                    <div id="statusArea" style="display: none;">
+                        <div class="status-row">
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <span id="statusText" class="md-typescale-title-medium">Processing...</span>
+                                <span id="progressText" class="md-typescale-label-medium">0 frames</span>
+                            </div>
+                            <md-filled-button id="cancelBtn" class="error-btn" style="display:none;">
+                                <md-icon slot="icon">close</md-icon>
+                                Cancel
+                            </md-filled-button>
+                        </div>
+
+                        <md-linear-progress id="progressBar" indeterminate></md-linear-progress>
+                    </div>
+
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 6px; color:gray;">
+                        <md-icon style="font-size: 18px;">info</md-icon>
+                        <span class="md-typescale-body-medium">
+                            All files are processed locally in your browser
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card" id="downloadCard">
+                    <div class="result-card-header">
+                        <div class="result-card-title">
+                            <md-icon style="font-size: 20px;">manufacturing</md-icon>
+                            <span class="md-typescale-title-medium">Decoded audio files</span>
+                        </div>
+
+                        <div class="result-card-actions">
+                            <md-filled-tonal-button id="dlAllBtn" style="display: none;">
+                                <md-icon slot="icon">folder_zip</md-icon>
+                                Download as ZIP
+                            </md-filled-tonal-button>
+
+                            <md-filled-button id="clearAllBtn" class="error-btn" style="display: none;">
+                                <md-icon slot="icon">delete</md-icon>
+                                Clear
+                            </md-filled-button>
+                        </div>
+                    </div>
+
+                    <div id="downloadArea"></div>
+                </div>
+            </div>
+
+            <div class="column-stack side-col">
+                <div class="card" id="optionsCard">
+                    <md-outlined-select label="Target output layout (CICP)" id="cicpSelect">
+                        <md-select-option value="1">
+                            <div slot="headline">Mono &bull; 1/0.0</div>
+                            <div slot="supporting-text">
+                                CICP 1 &ndash; C
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="2" selected>
+                            <div slot="headline">Stereo &bull; 2/0.0</div>
+                            <div slot="supporting-text">
+                                CICP 2 &ndash; L, R
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="13">
+                            <div slot="headline">22.2 surround &bull; 11/11.2</div>
+                            <div slot="supporting-text">
+                                CICP 13 &ndash; C, Lc, Rc, L, R, Lss, Rss, Lsr, Rsr, Cs, LFE, LFE2, Cv, Lv, Rv, Lvss,
+                                Rvss, Ts,
+                                Lvr, Rvr, Cvr, Cb, Lb, Rb
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="6">
+                            <div slot="headline">5.1 surround &bull; 3/2.1</div>
+                            <div slot="supporting-text">
+                                CICP 6 &ndash; C, L, R, Ls, Rs, LFE
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="12">
+                            <div slot="headline">7.1 surround &bull; 3/4.1</div>
+                            <div slot="supporting-text">
+                                CICP 12 &ndash; C, L, R, Ls, Rs, Lsr, Rsr, LFE
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="14">
+                            <div slot="headline">5.1.2 surround &bull; 5/2.1</div>
+                            <div slot="supporting-text">
+                                CICP 14 &ndash; C, L, R, Ls, Rs, LFE, Lv, Rv
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="16">
+                            <div slot="headline">5.1.4 surround &bull; 5/4.1</div>
+                            <div slot="supporting-text">
+                                CICP 16 &ndash; C, L, R, Ls, Rs, LFE, Lv, Rv, Lvs, Rvs
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="3">
+                            <div slot="headline">3/0.0</div>
+                            <div slot="supporting-text">
+                                CICP 3 &ndash; C, L, R
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="4">
+                            <div slot="headline">3/1.0</div>
+                            <div slot="supporting-text">
+                                CICP 4 &ndash; C, L, R, Cs
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="5">
+                            <div slot="headline">3/2.0</div>
+                            <div slot="supporting-text">
+                                CICP 5 &ndash; C, L, R, Ls, Rs
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="7">
+                            <div slot="headline">5/2.1</div>
+                            <div slot="supporting-text">
+                                CICP 7 &ndash; C, Lc, Rc, L, R, Ls, Rs, LFE
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="9">
+                            <div slot="headline">2/1.0</div>
+                            <div slot="supporting-text">
+                                CICP 9 &ndash; L, R, Cs
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="10">
+                            <div slot="headline">2/2.0</div>
+                            <div slot="supporting-text">
+                                CICP 10 &ndash; L, R, Ls, Rs
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="11">
+                            <div slot="headline">3/3.1</div>
+                            <div slot="supporting-text">
+                                CICP 11 &ndash; C, L, R, Ls, Rs, Cs, LFE
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="15">
+                            <div slot="headline">5/5.2</div>
+                            <div slot="supporting-text">
+                                CICP 15 &ndash; C, L, R, Lss, Rss, Ls, Rs, Lv, Rv, Cvr, LFE, LFE2
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="17">
+                            <div slot="headline">6/5.1</div>
+                            <div slot="supporting-text">
+                                CICP 17 &ndash; C, L, R, Ls, Rs, LFE, Lv, Rv, Cv, Lvs, Rvs, Ts
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="18">
+                            <div slot="headline">6/7.1</div>
+                            <div slot="supporting-text">
+                                CICP 18 &ndash; C, L, R, Ls, Rs, Lbs, Rbs, LFE, Lv, Rv, Cv, Lvs, Rvs, Ts
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="19">
+                            <div slot="headline">5/6.1</div>
+                            <div slot="supporting-text">
+                                CICP 19 &ndash; C, L, R, Lss, Rss, Lsr, Rsr, LFE, Lv, Rv, Lvr, Rvr
+                            </div>
+                        </md-select-option>
+                        <md-select-option value="20">
+                            <div slot="headline">7/6.1</div>
+                            <div slot="supporting-text">
+                                CICP 20 &ndash; C, Leos, Reos, L, R, Lss, Rss, Lsr, Rsr, LFE, Lv, Rv, Lvs, Rvs
+                            </div>
+                        </md-select-option>
+                    </md-outlined-select>
+
+                    <details>
+                        <summary>Advanced options</summary>
+                        <div class="advanced-grid">
+                            <md-outlined-select label="PCM word size" id="pcmSize">
+                                <md-select-option value="">
+                                    <div slot="headline">Default</div>
+                                </md-select-option>
+                                <md-select-option value="16">
+                                    <div slot="headline">16-bit</div>
+                                </md-select-option>
+                                <md-select-option value="24">
+                                    <div slot="headline">24-bit</div>
+                                </md-select-option>
+                                <md-select-option value="32">
+                                    <div slot="headline">32-bit</div>
+                                </md-select-option>
+                            </md-outlined-select>
+
+                            <md-outlined-select label="Output sample rate" id="sampleRate">
+                                <md-select-option value="">
+                                    <div slot="headline">Native</div>
+                                </md-select-option>
+                                <md-select-option value="44100">
+                                    <div slot="headline">44100 Hz</div>
+                                </md-select-option>
+                                <md-select-option value="48000">
+                                    <div slot="headline">48000 Hz</div>
+                                </md-select-option>
+                                <md-select-option value="96000">
+                                    <div slot="headline">96000 Hz</div>
+                                </md-select-option>
+                            </md-outlined-select>
+
+                            <md-outlined-text-field label="Target loudness (dB)" placeholder="-24" type="number"
+                                id="targetLoudness"></md-outlined-text-field>
+
+                            <md-outlined-select label="DRC effect type" id="drcEffect">
+                                <md-select-option value="0">
+                                    <div slot="headline">None</div>
+                                </md-select-option>
+
+                                <md-select-option value="1">
+                                    <div slot="headline">Night</div>
+                                    <div slot="supporting-text">Reduced dynamic range for quiet listening</div>
+                                </md-select-option>
+
+                                <md-select-option value="2">
+                                    <div slot="headline">Noisy</div>
+                                    <div slot="supporting-text">Enhanced clarity in loud environments</div>
+                                </md-select-option>
+
+                                <md-select-option value="3">
+                                    <div slot="headline">Limited</div>
+                                    <div slot="supporting-text">Strong dynamic range compression</div>
+                                </md-select-option>
+
+                                <md-select-option value="4">
+                                    <div slot="headline">Low Level</div>
+                                    <div slot="supporting-text">Optimized for very low playback levels</div>
+                                </md-select-option>
+
+                                <md-select-option value="5">
+                                    <div slot="headline">Dialog</div>
+                                    <div slot="supporting-text">Dialog enhancement</div>
+                                </md-select-option>
+
+                                <md-select-option value="6">
+                                    <div slot="headline">General Compression</div>
+                                    <div slot="supporting-text">Balanced dynamic range control</div>
+                                </md-select-option>
+
+                                <md-select-option value="7">
+                                    <div slot="headline">Expand</div>
+                                    <div slot="supporting-text">Increase dynamic range</div>
+                                </md-select-option>
+
+                                <md-select-option value="8">
+                                    <div slot="headline">Artistic</div>
+                                    <div slot="supporting-text">Creator-intended dynamics</div>
+                                </md-select-option>
+                            </md-outlined-select>
+
+                            <label class="switch-wrapper">
+                                <md-switch id="toggleStderr"></md-switch>
+                                <span class="md-typescale-body-large">Print stderr to logs</span>
+                            </label>
+
+                            <label class="switch-wrapper">
+                                <md-switch id="toggleLogs"></md-switch>
+                                <span class="md-typescale-body-large">Display decoder logs</span>
+                            </label>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="card" id="logsCard" style="padding: 0; overflow: hidden; gap: 0; display: none;">
+                    <span class="md-typescale-title-small" style="padding: 6px 16px;">Decoder logs</span>
+                    <div class="log-container" id="consoleLog"></div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: center; align-items: center; gap: 6px; color: gray;">
+            <md-icon style="font-size: 16px;">copyright</md-icon>
+            <span class="md-typescale-body-small">
+                This website uses
+                <a href="https://github.com/ittiam-systems/libmpegh" target="_blank" rel="noopener">
+                    libmpegh</a>
+                distributed under the
+                <a href="https://spdx.org/licenses/BSD-3-Clause-Clear.html" target="_blank" rel="noopener">
+                    BSD-3-Clause-Clear License</a>.
+                See the
+                <a href="/js/libmpegh/LICENSE" target="_blank" rel="noopener">
+                    LICENSE</a>
+                file for more information
+            </span>
+        </div>
+    </div>
+</body>
+
+</html>

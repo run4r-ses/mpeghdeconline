@@ -1,5 +1,5 @@
 import { perfWidget, perfPrimary } from './dom.js';
-import { toggleAnim } from './utils.js';
+import { toggleVisible } from './utils.js';
 
 let lastFrame = 0;
 let lastTime = 0;
@@ -24,5 +24,5 @@ export function updateStats(currentFrame) {
 }
 
 export function stopMonitor() {
-    toggleAnim(perfWidget, false);
+    toggleVisible(perfWidget, false);
 }

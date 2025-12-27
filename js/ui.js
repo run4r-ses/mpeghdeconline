@@ -1,5 +1,5 @@
 import * as dom from './dom.js';
-import { toggleAnim, createEl } from './utils.js';
+import { toggleVisible, createEl } from './utils.js';
 
 let autoScroll = true;
 
@@ -25,9 +25,9 @@ export function setReadyState() {
     dom.fileArea.classList.remove('disabled');
     dom.fileAreaIcon.textContent = "upload_file";
 
-    toggleAnim(dom.startBtn, false);
-    toggleAnim(dom.queueList, false);
-    toggleAnim(dom.optionsCard, true);
+    toggleVisible(dom.startBtn, false);
+    toggleVisible(dom.queueList, false);
+    toggleVisible(dom.optionsCard, true);
 
     dom.fileAreaText.style.display = "block";
     dom.fileAreaText.textContent = "Drag & drop or click to browse";
@@ -38,8 +38,8 @@ export function setReadyState() {
 export function renderQueue(files, onRemove) {
     if (files.length === 0) {
         if (dom.queueList.style.display !== 'none') {
-            toggleAnim(dom.queueList, false);
-            toggleAnim(dom.startBtn, false, 'inline-flex');
+            toggleVisible(dom.queueList, false);
+            toggleVisible(dom.startBtn, false, 'inline-flex');
         } else {
             dom.queueList.style.display = 'none';
             dom.startBtn.style.display = 'none';
@@ -49,8 +49,8 @@ export function renderQueue(files, onRemove) {
     }
 
     if (dom.queueList.style.display === 'none') {
-        toggleAnim(dom.queueList, true, 'flex');
-        toggleAnim(dom.startBtn, true, 'inline-flex');
+        toggleVisible(dom.queueList, true, 'flex');
+        toggleVisible(dom.startBtn, true, 'inline-flex');
     }
 
     dom.queueList.innerHTML = '';
@@ -113,7 +113,7 @@ export function setProcessingState(idx, total) {
     dom.queueList.style.display = 'flex';
 
     dom.fileNameDisplay.textContent = "Processing queue...";
-    toggleAnim(dom.startBtn, false);
+    toggleVisible(dom.startBtn, false);
 
     dom.statusArea.style.display = "block";
     dom.statusText.textContent = `Processing file ${idx} of ${total}`;
@@ -140,14 +140,14 @@ export function finishJob(msg, success = true, queueComplete = true) {
     if (!success) dom.statusText.style.color = "var(--md-sys-color-error)";
 
     if (queueComplete) {
-        toggleAnim(dom.progressText, false);
+        toggleVisible(dom.progressText, false);
     }
 
     dom.fileInput.disabled = false;
     dom.fileArea.classList.remove('disabled');
-    toggleAnim(dom.fileArea, true);
+    toggleVisible(dom.fileArea, true);
     dom.optionsCard.classList.remove('disabled-card');
-    toggleAnim(dom.cancelBtn, false);
+    toggleVisible(dom.cancelBtn, false);
 
     if (success) dom.clearAllBtn.disabled = false;
 }

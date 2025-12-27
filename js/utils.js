@@ -1,18 +1,10 @@
-export function toggleAnim(el, show, displayType = 'flex') {
-    const anim = el.getAnimations()[0];
-    if (anim) anim.cancel();
-
+export function toggleVisible(el, show, displayType = 'flex') {
     if (show) {
         el.style.display = displayType;
-        el.animate(
-            [{ opacity: 0, transform: 'scale(0.98)' }, { opacity: 1, transform: 'scale(1)' }],
-            { duration: 150, easing: 'ease-out', fill: 'forwards' }
-        );
+        el.style.opacity = '1';
+        el.style.transform = 'none';
     } else {
-        el.animate(
-            [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.98)' }],
-            { duration: 150, easing: 'ease-in', fill: 'forwards' }
-        ).onfinish = () => el.style.display = 'none';
+        el.style.display = 'none';
     }
 }
 

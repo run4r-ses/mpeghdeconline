@@ -1,5 +1,5 @@
 import * as dom from './dom.js';
-import { createEl, formatBytes, toggleAnim } from './utils.js';
+import { createEl, formatBytes, toggleVisible } from './utils.js';
 
 let downloadCache = [];
 
@@ -13,7 +13,7 @@ function updateButtons() {
 
 export function addDownload(data, filename, frameCount = 0) {
     if (dom.downloadArea.style.display === 'none') {
-        toggleAnim(dom.downloadArea, true, 'block');
+        toggleVisible(dom.downloadArea, true, 'block');
     }
 
     downloadCache.push({ name: filename, data: data });
@@ -68,7 +68,7 @@ export function addDownload(data, filename, frameCount = 0) {
 
 export function addError(filename, msg) {
     if (dom.downloadArea.style.display === 'none') {
-        toggleAnim(dom.downloadArea, true, 'block');
+        toggleVisible(dom.downloadArea, true, 'block');
     }
 
     const item = createEl('div', 'download-item');
@@ -109,7 +109,7 @@ export function addError(filename, msg) {
 }
 
 export function clearAll() {
-    toggleAnim(dom.downloadArea, false);
+    toggleVisible(dom.downloadArea, false);
 
     setTimeout(() => {
         dom.downloadArea.innerHTML = '';

@@ -476,33 +476,6 @@ details.closing .advanced-grid {
 }
 
 /* media */
-
-@media (min-width: 1100px) {
-    .container {
-        max-width: 1400px;
-    }
-
-    .content-grid {
-        flex-direction: row;
-        align-items: flex-start;
-        justify-content: center;
-    }
-
-    .main-col {
-        flex: 1.5;
-        min-width: 0;
-    }
-
-    .side-col {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .perfbox-widget {
-        animation: slideFromRight 0.17s cubic-bezier(0.2, 0.0, 0.2, 1) forwards;
-    }
-}
-
 @media (max-width: 600px) {
     header {
         flex-direction: column;

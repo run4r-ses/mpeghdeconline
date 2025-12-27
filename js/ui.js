@@ -3,27 +3,23 @@ import { toggleAnim, createEl } from './utils.js';
 
 let autoScroll = true;
 
-dom.logEl.addEventListener('scroll', () => {
-    const el = dom.logEl;
-
-    const threshold = 4;
-
-    const atBottom =
-        el.scrollTop + el.clientHeight >= el.scrollHeight - threshold;
-
-    autoScroll = atBottom;
-});
-
 export function log(msg, type = 'INFO') {
-    const prefix = type === 'RAW' ? '' : `[${type}] `;
-
-    dom.logEl.innerHTML += `${prefix}${msg}<br>`;
-
-    if (autoScroll && type !== 'RAW') {
-        dom.logEl.scrollTop = dom.logEl.scrollHeight;
+    const text = type === 'RAW' ? msg : `[${type}] ${msg}`;
+    
+    switch (type) {
+        case 'ERROR':
+            console.error(text);
+            break;
+        case 'WARN':
+            console.warn(text);
+            break;
+        case 'DEBUG':
+            console.debug(text);
+            break;
+        default:
+            console.log(text);
     }
 }
-
 export function setReadyState() {
     dom.fileInput.disabled = false;
     dom.fileArea.classList.remove('disabled');

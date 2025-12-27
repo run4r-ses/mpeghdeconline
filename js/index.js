@@ -2,7 +2,6 @@ import * as dom from './dom.js';
 import * as ui from './ui.js';
 import * as perf from './perf.js';
 import * as dl from './download.js';
-import { toggleAnim } from './utils.js';
 
 let worker = null;
 let queue = [];
@@ -39,7 +38,9 @@ function initWorker() {
                 runQueue();
                 break;
             case 'error':
-                ui.log(`Error: ${msg.text}`, 'ERROR');
+                ui.log(msg.text, 'ERROR');
+                dl.addError(queue[qIndex].name, msg.text);
+                ui.updateQueueStatus(qIndex, 'finished'); 
                 qIndex++;
                 runQueue();
                 break;
@@ -93,14 +94,26 @@ async function runQueue() {
 
     } catch (err) {
         ui.log(`Load failed: ${err}`, 'ERROR');
+        dl.addError(file.name, `Load failed: ${err}`);
         qIndex++;
         runQueue();
     }
 }
 
-dom.toggleLogs.addEventListener('change', function () {
-    toggleAnim(dom.logsCard, this.selected);
-});
+if (dom.erudaBtn) {
+    dom.erudaBtn.addEventListener('click', () => {
+        const script = document.createElement('script');
+        script.src = "//cdn.jsdelivr.net/npm/eruda";
+        script.onload = () => {
+            eruda.init();
+            const status = dom.erudaBtn.querySelector('.erudaStatus');
+            status.textContent = "Eruda is loaded";
+            dom.erudaBtn.disabled = true;
+            ui.log("Eruda initialized", "INFO");
+        };
+        document.body.appendChild(script);
+    });
+}
 
 dom.clearAllBtn.addEventListener('click', dl.clearAll);
 

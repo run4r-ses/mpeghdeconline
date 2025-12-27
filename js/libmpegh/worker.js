@@ -2,14 +2,18 @@ importScripts(`ia_mpeghd_testbench.js?cb=${performance.now()}`);
 
 let decoderInstance = null;
 
-
 onmessage = function (e) {
     const msg = e.data;
 
     if (msg.type === 'init') {
         createMpeghDecoder({
             print: function (text) { postMessage({ type: 'stdout', text: text }); },
-            printErr: function (text) { postMessage({ type: 'stderr', text: text }); }
+            printErr: function (text) {
+                postMessage({ type: 'stderr', text: text });
+                if (/fatal|error/i.test(text) && !text.includes("Warng")) {
+                    throw new Error(text);
+                }
+            }
         }).then(instance => {
             decoderInstance = instance;
             postMessage({ type: 'ready' });
@@ -48,6 +52,13 @@ onmessage = function (e) {
 
             decoderInstance.callMain(args);
 
+            try {
+                const stat = decoderInstance.FS.stat(outName);
+                if (stat.size < 44) throw new Error("Output file is empty or invalid (0 bytes)");
+            } catch (e) {
+                throw new Error("Decoder finished but no valid output file was generated");
+            }
+
             const cicpVal = (msg.options && msg.options.cicp) ? msg.options.cicp : "0";
             const base = msg.baseName || "output";
             const finalName = `${base}_CICP${cicpVal}.wav`;
@@ -64,7 +75,10 @@ onmessage = function (e) {
             try { decoderInstance.FS.unlink(outName); } catch (e) { }
 
         } catch (err) {
-            postMessage({ type: 'error', text: err.toString() });
+            postMessage({ type: 'error', text: err.message || err.toString() });
+
+            try { decoderInstance.FS.unlink(fileName); } catch (e) { }
+            try { decoderInstance.FS.unlink(outName); } catch (e) { }
         }
     }
 };

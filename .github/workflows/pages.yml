@@ -38,7 +38,9 @@ jobs:
           rm libmpegh.zip
 
       - name: Patch files
-        run: python3 patch.py
+        run: |
+          python3 patch.py
+          rm patch.py
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

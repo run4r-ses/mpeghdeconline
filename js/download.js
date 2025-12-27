@@ -5,15 +5,15 @@ let downloadCache = [];
 
 function updateButtons() {
     const hasItems = downloadCache.length > 0;
-    dom.clearAllBtn.style.display = hasItems ? 'inline-flex' : 'none';
+    const hasAnyContent = dom.downloadArea.children.length > 0;
+
+    dom.clearAllBtn.style.display = hasAnyContent ? 'inline-flex' : 'none';
     dom.dlAllBtn.style.display = (hasItems && downloadCache.length > 1) ? 'inline-flex' : 'none';
 }
 
 export function addDownload(data, filename, frameCount = 0) {
-    if (downloadCache.length === 0) {
-        if (dom.downloadArea.style.display === 'none') {
-            toggleAnim(dom.downloadArea, true, 'block');
-        }
+    if (dom.downloadArea.style.display === 'none') {
+        toggleAnim(dom.downloadArea, true, 'block');
     }
 
     downloadCache.push({ name: filename, data: data });
@@ -66,15 +66,57 @@ export function addDownload(data, filename, frameCount = 0) {
     updateButtons();
 }
 
+export function addError(filename, msg) {
+    if (dom.downloadArea.style.display === 'none') {
+        toggleAnim(dom.downloadArea, true, 'block');
+    }
+
+    const item = createEl('div', 'download-item');
+    item.style.borderColor = 'var(--md-sys-color-error-container)';
+    item.style.backgroundColor = 'var(--md-sys-color-error-container)';
+    item.style.color = 'var(--md-sys-color-on-error-container)';
+
+    const header = createEl('div', 'download-header');
+
+    const textWrapper = createEl('div', '');
+    textWrapper.style.flex = '1';
+
+    const titleRow = createEl('div', '');
+    titleRow.style.display = 'flex';
+    titleRow.style.alignItems = 'center';
+    titleRow.style.gap = '8px';
+
+    const icon = createEl('span', 'material-symbols-outlined', 'error');
+    icon.style.color = 'var(--md-sys-color-error)';
+
+    const nameSpan = createEl('span', 'download-filename', filename);
+    nameSpan.style.color = 'var(--md-sys-color-on-surface)';
+
+    titleRow.append(icon, nameSpan);
+
+    const errorMsg = createEl('div', '', msg);
+    errorMsg.style.fontSize = '12px';
+    errorMsg.style.marginTop = '4px';
+    errorMsg.style.fontFamily = 'monospace';
+    errorMsg.style.opacity = '0.8';
+
+    textWrapper.append(titleRow, errorMsg);
+    header.append(textWrapper);
+    item.append(header);
+
+    dom.downloadArea.appendChild(item);
+    updateButtons();
+}
+
 export function clearAll() {
     toggleAnim(dom.downloadArea, false);
 
     setTimeout(() => {
         dom.downloadArea.innerHTML = '';
+        updateButtons();
     }, 150);
 
     downloadCache = [];
-    updateButtons();
 }
 
 export async function downloadZip() {

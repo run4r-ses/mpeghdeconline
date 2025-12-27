@@ -317,17 +317,12 @@
                                 <span class="md-typescale-body-large">Print stderr to logs</span>
                             </label>
 
-                            <label class="switch-wrapper">
-                                <md-switch id="toggleLogs" autocomplete="off"></md-switch>
-                                <span class="md-typescale-body-large">Display decoder logs</span>
-                            </label>
+                            <md-filled-tonal-button id="erudaBtn">
+                                <md-icon slot="icon">bug_report</md-icon>
+                                <span class="erudaStatus">Load Eruda</span>
+                            </md-filled-tonal-button>
                         </div>
                     </details>
-                </div>
-
-                <div class="card" id="logsCard" style="padding: 0; overflow: hidden; gap: 0; display: none;">
-                    <span class="md-typescale-title-small" style="padding: 6px 16px;">Decoder logs</span>
-                    <div class="log-container" id="consoleLog"></div>
                 </div>
             </div>
         </div>

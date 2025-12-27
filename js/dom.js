@@ -1,6 +1,5 @@
 export const getEl = (id) => document.getElementById(id);
 
-export const logEl = getEl('consoleLog');
 export const fileArea = document.querySelector('.file-area');
 export const fileInput = getEl('fileInput');
 export const fileAreaIcon = getEl('fileAreaIcon');
@@ -23,8 +22,7 @@ export const perfWidget = getEl('perfWidget');
 export const perfPrimary = getEl('perfPrimary');
 
 export const optionsCard = getEl('optionsCard');
-export const logsCard = getEl('logsCard');
-export const toggleLogs = getEl('toggleLogs');
+export const erudaBtn = getEl('erudaBtn');
 export const sideCol = document.querySelector('.side-col');
 
 export const config = {

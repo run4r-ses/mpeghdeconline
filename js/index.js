@@ -10,7 +10,25 @@ let isProcessing = false;
 let lastFrameCount = 0;
 
 /* ── PCM streaming state ─────────────────────────────────────────── */
-let pcmChunks = [];      // accumulated per-frame PCM buffers
+let flushedBlobs = [];      // intermediate Blobs (file-backed by the browser)
+let pendingChunks = [];     // small buffer of recent chunks before flush
+let pendingSize = 0;
+let totalPcmBytes = 0;
+const FLUSH_THRESHOLD = 10 * 1024 * 1024; // flush every 10 MB
+
+function flushChunks() {
+    if (pendingChunks.length === 0) return;
+    flushedBlobs.push(new Blob(pendingChunks));
+    pendingChunks = [];     // GC can reclaim the chunk ArrayBuffers
+    pendingSize = 0;
+}
+
+function resetPcmState() {
+    flushedBlobs = [];
+    pendingChunks = [];
+    pendingSize = 0;
+    totalPcmBytes = 0;
+}
 
 /* ── Fallback WAV header (used if the C-generated one is unavailable) */
 function buildFallbackWavHeader(totalPcmBytes) {
@@ -69,17 +87,20 @@ function initWorker() {
 
             /* ── Streaming PCM from the C decoder ─────────────── */
             case 'pcm_chunk':
-                pcmChunks.push(msg.data);
+                pendingChunks.push(msg.data);
+                pendingSize += msg.data.byteLength;
+                totalPcmBytes += msg.data.byteLength;
+                /* Flush to an intermediate Blob every FLUSH_THRESHOLD.
+                   Chromium backs Blobs >256KB with temp files on disk,
+                   so flushed data is paged out of RAM. */
+                if (pendingSize >= FLUSH_THRESHOLD) flushChunks();
                 break;
 
             case 'done': {
                 ui.log(`Finished: ${msg.filename}`);
 
-                /* Compute total PCM bytes from the actual chunks */
-                let totalPcmBytes = 0;
-                for (const chunk of pcmChunks) {
-                    totalPcmBytes += chunk.byteLength;
-                }
+                /* Flush any remaining chunks */
+                flushChunks();
 
                 /* Use the C-generated WAV header (44 bytes) if available,
                    with corrected size fields. Fall back to a generic header. */
@@ -92,15 +113,16 @@ function initWorker() {
                     wavHeader = buildFallbackWavHeader(totalPcmBytes);
                 }
 
-                /* Build the final WAV Blob: header + PCM chunks.
-                   Blob constructor takes references — no extra copy. */
+                /* Compose the final WAV Blob from header + flushed sub-Blobs.
+                   The browser composes these without copying — it references
+                   the file-backed sub-Blob storage. */
                 const blob = new Blob(
-                    [wavHeader, ...pcmChunks],
+                    [wavHeader, ...flushedBlobs],
                     { type: 'audio/wav' }
                 );
 
-                /* Free chunk references — Blob now owns the data */
-                pcmChunks = [];
+                /* Free all PCM references */
+                resetPcmState();
 
                 dl.addDownload(blob, msg.filename, lastFrameCount);
 
@@ -118,7 +140,7 @@ function initWorker() {
                 ui.log(msg.text, 'ERROR');
                 dl.addError(queue[qIndex].name, msg.text);
 
-                pcmChunks = [];
+                resetPcmState();
 
                 ui.updateQueueStatus(qIndex, 'finished');
                 qIndex++;
@@ -168,7 +190,7 @@ async function runQueue() {
     ui.setProcessingState(qIndex + 1, queue.length);
     perf.resetMonitor();
     lastFrameCount = 0;
-    pcmChunks = [];
+    resetPcmState();
 
     try {
         const buf = await file.arrayBuffer();
@@ -227,7 +249,7 @@ dom.cancelBtn.addEventListener('click', () => {
     ui.log('Queue cancelled', 'WARN');
     if (worker) worker.terminate();
     worker = null;
-    pcmChunks = [];
+    resetPcmState();
     perf.stopMonitor();
     ui.finishJob("Cancelled", false, true);
     initWorker();

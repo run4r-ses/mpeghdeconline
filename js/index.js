@@ -9,60 +9,7 @@ let qIndex = 0;
 let isProcessing = false;
 let lastFrameCount = 0;
 
-/* ── PCM streaming state ─────────────────────────────────────────── */
-let flushedBlobs = [];      // intermediate Blobs (file-backed by the browser)
-let pendingChunks = [];     // small buffer of recent chunks before flush
-let pendingSize = 0;
-let totalPcmBytes = 0;
-const FLUSH_THRESHOLD = 10 * 1024 * 1024; // flush every 10 MB
 
-function flushChunks() {
-    if (pendingChunks.length === 0) return;
-    flushedBlobs.push(new Blob(pendingChunks));
-    pendingChunks = [];     // GC can reclaim the chunk ArrayBuffers
-    pendingSize = 0;
-}
-
-function resetPcmState() {
-    flushedBlobs = [];
-    pendingChunks = [];
-    pendingSize = 0;
-    totalPcmBytes = 0;
-}
-
-/* ── Fallback WAV header (used if the C-generated one is unavailable) */
-function buildFallbackWavHeader(totalPcmBytes) {
-    /* Defaults: 48kHz, stereo, 16-bit — reasonable for MPEG-H output */
-    const sampleRate = 48000, numChannels = 2, bitsPerSample = 16;
-    const bytesPerSample = bitsPerSample / 8;
-    const blockAlign = numChannels * bytesPerSample;
-    const byteRate = sampleRate * blockAlign;
-    const header = new ArrayBuffer(44);
-    const v = new DataView(header);
-    v.setUint32(0, 0x52494646, false);   // RIFF
-    v.setUint32(4, totalPcmBytes + 36, true);
-    v.setUint32(8, 0x57415645, false);   // WAVE
-    v.setUint32(12, 0x666d7420, false);  // fmt
-    v.setUint32(16, 16, true);
-    v.setUint16(20, 1, true);
-    v.setUint16(22, numChannels, true);
-    v.setUint32(24, sampleRate, true);
-    v.setUint32(28, byteRate, true);
-    v.setUint16(32, blockAlign, true);
-    v.setUint16(34, bitsPerSample, true);
-    v.setUint32(36, 0x64617461, false);  // data
-    v.setUint32(40, totalPcmBytes, true);
-    return new Uint8Array(header);
-}
-
-/* Fix up the WAV header's size fields to match actual PCM data */
-function fixWavHeaderSizes(header, totalPcmBytes) {
-    const patched = new Uint8Array(header);
-    const v = new DataView(patched.buffer);
-    v.setUint32(4, totalPcmBytes + 36, true);  // RIFF chunk size
-    v.setUint32(40, totalPcmBytes, true);       // data chunk size
-    return patched;
-}
 
 function initWorker() {
     if (worker) worker.terminate();
@@ -85,46 +32,10 @@ function initWorker() {
                 if (dom.config.stderr.selected) ui.log(msg.text, 'RAW');
                 break;
 
-            /* ── Streaming PCM from the C decoder ─────────────── */
-            case 'pcm_chunk':
-                pendingChunks.push(msg.data);
-                pendingSize += msg.data.byteLength;
-                totalPcmBytes += msg.data.byteLength;
-                /* Flush to an intermediate Blob every FLUSH_THRESHOLD.
-                   Chromium backs Blobs >256KB with temp files on disk,
-                   so flushed data is paged out of RAM. */
-                if (pendingSize >= FLUSH_THRESHOLD) flushChunks();
-                break;
-
             case 'done': {
                 ui.log(`Finished: ${msg.filename}`);
 
-                /* Flush any remaining chunks */
-                flushChunks();
-
-                /* Use the C-generated WAV header (44 bytes) if available,
-                   with corrected size fields. Fall back to a generic header. */
-                let wavHeader;
-                if (msg.wavHeader && msg.wavHeader.byteLength >= 44) {
-                    wavHeader = fixWavHeaderSizes(
-                        msg.wavHeader.slice(0, 44), totalPcmBytes
-                    );
-                } else {
-                    wavHeader = buildFallbackWavHeader(totalPcmBytes);
-                }
-
-                /* Compose the final WAV Blob from header + flushed sub-Blobs.
-                   The browser composes these without copying — it references
-                   the file-backed sub-Blob storage. */
-                const blob = new Blob(
-                    [wavHeader, ...flushedBlobs],
-                    { type: 'audio/wav' }
-                );
-
-                /* Free all PCM references */
-                resetPcmState();
-
-                dl.addDownload(blob, msg.filename, lastFrameCount);
+                dl.addDownload(msg.file, msg.filename, lastFrameCount);
 
                 ui.updateQueueStatus(qIndex, 'finished');
                 qIndex++;
@@ -139,8 +50,6 @@ function initWorker() {
             case 'error':
                 ui.log(msg.text, 'ERROR');
                 dl.addError(queue[qIndex].name, msg.text);
-
-                resetPcmState();
 
                 ui.updateQueueStatus(qIndex, 'finished');
                 qIndex++;
@@ -190,7 +99,6 @@ async function runQueue() {
     ui.setProcessingState(qIndex + 1, queue.length);
     perf.resetMonitor();
     lastFrameCount = 0;
-    resetPcmState();
 
     try {
         const buf = await file.arrayBuffer();
@@ -249,7 +157,6 @@ dom.cancelBtn.addEventListener('click', () => {
     ui.log('Queue cancelled', 'WARN');
     if (worker) worker.terminate();
     worker = null;
-    resetPcmState();
     perf.stopMonitor();
     ui.finishJob("Cancelled", false, true);
     initWorker();

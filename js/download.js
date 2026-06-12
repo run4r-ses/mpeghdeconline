@@ -116,7 +116,7 @@ export function addError(filename, msg) {
     updateButtons();
 }
 
-export function clearAll() {
+export async function clearAll() {
     toggleVisible(dom.downloadArea, false);
 
     setTimeout(() => {
@@ -129,6 +129,16 @@ export function clearAll() {
         URL.revokeObjectURL(entry.blobURL);
     }
     downloadCache = [];
+
+    // Clear OPFS files
+    try {
+        const root = await navigator.storage.getDirectory();
+        for await (const name of root.keys()) {
+            await root.removeEntry(name, { recursive: true });
+        }
+    } catch (e) {
+        console.error("Failed to clear OPFS files:", e);
+    }
 }
 
 export async function downloadZip() {
@@ -153,3 +163,15 @@ export async function downloadZip() {
 
     URL.revokeObjectURL(url);
 }
+
+// Clean up any leftover temp files in OPFS from previous aborted sessions on startup
+(async function cleanupStartupOPFS() {
+    try {
+        const root = await navigator.storage.getDirectory();
+        for await (const name of root.keys()) {
+            await root.removeEntry(name, { recursive: true });
+        }
+    } catch (e) {
+        console.error("Startup OPFS cleanup failed:", e);
+    }
+})();

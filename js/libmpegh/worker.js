@@ -50,26 +50,30 @@ onmessage = function (e) {
 
             postMessage({ type: 'stdout', text: `Running: ${args.join(' ')}` });
 
+            /* callMain() is synchronous. During execution the patched C code
+               emits pcm_chunk and progress messages via EM_ASM postMessage
+               directly to the main thread. The worker never accumulates
+               decoded data — each chunk is transferred immediately. */
             decoderInstance.callMain(args);
 
+            /* The C code still writes the 44-byte WAV header to the output
+               file via write_wav_header(). We read ONLY those 44 bytes
+               (no PCM data was written) to get the correct format info. */
+            let wavHeader = null;
             try {
-                const stat = decoderInstance.FS.stat(outName);
-                if (stat.size < 44) throw new Error("Output file is empty or invalid (0 bytes)");
-            } catch (e) {
-                throw new Error("Decoder finished but no valid output file was generated");
-            }
+                wavHeader = decoderInstance.FS.readFile(outName);
+                if (wavHeader.byteLength < 44) wavHeader = null;
+            } catch (e) { /* file might not exist on error */ }
 
             const cicpVal = (msg.options && msg.options.cicp) ? msg.options.cicp : "0";
             const base = msg.baseName || "output";
             const finalName = `${base}_CICP${cicpVal}.wav`;
 
-            const wavData = decoderInstance.FS.readFile(outName);
-
             postMessage({
                 type: 'done',
-                data: wavData,
+                wavHeader: wavHeader,
                 filename: finalName
-            }, [wavData.buffer]);
+            }, wavHeader ? [wavHeader.buffer] : []);
 
             try { decoderInstance.FS.unlink(fileName); } catch (e) { }
             try { decoderInstance.FS.unlink(outName); } catch (e) { }

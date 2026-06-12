@@ -11,14 +11,22 @@ function updateButtons() {
     dom.dlAllBtn.style.display = (hasItems && downloadCache.length > 1) ? 'inline-flex' : 'none';
 }
 
-export function addDownload(data, filename, frameCount = 0) {
+/**
+ * @param {Blob} blob - The WAV blob (NOT raw Uint8Array)
+ * @param {string} filename
+ * @param {number} frameCount
+ */
+export function addDownload(blob, filename, frameCount = 0) {
     if (dom.downloadArea.style.display === 'none') {
         toggleVisible(dom.downloadArea, true, 'block');
     }
 
-    downloadCache.push({ name: filename, data: data });
+    const url = URL.createObjectURL(blob);
 
-    const url = URL.createObjectURL(new Blob([data], { type: 'audio/wav' }));
+    /* Store only the blob URL and name — NOT the raw data.
+       The Blob is held alive by the object URL; the raw Uint8Array
+       chunks that composed it can be GC'd. */
+    downloadCache.push({ name: filename, blobURL: url, size: blob.size });
 
     const item = createEl('div', 'download-item');
     const header = createEl('div', 'download-header');
@@ -52,7 +60,7 @@ export function addDownload(data, filename, frameCount = 0) {
     icon.slot = "icon";
     icon.textContent = "download";
 
-    btn.append(icon, document.createTextNode(`Download \u2022 ${formatBytes(data.byteLength)} MB`));
+    btn.append(icon, document.createTextNode(`Download \u2022 ${formatBytes(blob.size)} MB`));
 
     header.append(textWrapper, btn);
 
@@ -86,13 +94,13 @@ export function addError(filename, msg) {
     titleRow.style.alignItems = 'center';
     titleRow.style.gap = '8px';
 
-    const icon = createEl('span', 'material-symbols-outlined', 'error');
-    icon.style.color = 'var(--md-sys-color-error)';
+    const iconEl = createEl('span', 'material-symbols-outlined', 'error');
+    iconEl.style.color = 'var(--md-sys-color-error)';
 
     const nameSpan = createEl('span', 'download-filename', filename);
     nameSpan.style.color = 'var(--md-sys-color-on-surface)';
 
-    titleRow.append(icon, nameSpan);
+    titleRow.append(iconEl, nameSpan);
 
     const errorMsg = createEl('div', '', msg);
     errorMsg.style.fontSize = '12px';
@@ -116,6 +124,10 @@ export function clearAll() {
         updateButtons();
     }, 150);
 
+    /* Revoke all blob URLs to release the underlying Blob memory */
+    for (const entry of downloadCache) {
+        URL.revokeObjectURL(entry.blobURL);
+    }
     downloadCache = [];
 }
 
@@ -124,9 +136,12 @@ export async function downloadZip() {
 
     const zip = new JSZip();
 
-    downloadCache.forEach(file => {
-        zip.file(file.name, file.data);
-    });
+    /* Fetch each Blob from its URL — avoids keeping raw data in memory */
+    for (const file of downloadCache) {
+        const response = await fetch(file.blobURL);
+        const data = await response.arrayBuffer();
+        zip.file(file.name, data);
+    }
 
     const content = await zip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(content);

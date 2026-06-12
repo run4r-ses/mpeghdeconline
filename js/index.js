@@ -9,6 +9,43 @@ let qIndex = 0;
 let isProcessing = false;
 let lastFrameCount = 0;
 
+/* ── PCM streaming state ─────────────────────────────────────────── */
+let pcmChunks = [];      // accumulated per-frame PCM buffers
+
+/* ── Fallback WAV header (used if the C-generated one is unavailable) */
+function buildFallbackWavHeader(totalPcmBytes) {
+    /* Defaults: 48kHz, stereo, 16-bit — reasonable for MPEG-H output */
+    const sampleRate = 48000, numChannels = 2, bitsPerSample = 16;
+    const bytesPerSample = bitsPerSample / 8;
+    const blockAlign = numChannels * bytesPerSample;
+    const byteRate = sampleRate * blockAlign;
+    const header = new ArrayBuffer(44);
+    const v = new DataView(header);
+    v.setUint32(0, 0x52494646, false);   // RIFF
+    v.setUint32(4, totalPcmBytes + 36, true);
+    v.setUint32(8, 0x57415645, false);   // WAVE
+    v.setUint32(12, 0x666d7420, false);  // fmt
+    v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true);
+    v.setUint16(22, numChannels, true);
+    v.setUint32(24, sampleRate, true);
+    v.setUint32(28, byteRate, true);
+    v.setUint16(32, blockAlign, true);
+    v.setUint16(34, bitsPerSample, true);
+    v.setUint32(36, 0x64617461, false);  // data
+    v.setUint32(40, totalPcmBytes, true);
+    return new Uint8Array(header);
+}
+
+/* Fix up the WAV header's size fields to match actual PCM data */
+function fixWavHeaderSizes(header, totalPcmBytes) {
+    const patched = new Uint8Array(header);
+    const v = new DataView(patched.buffer);
+    v.setUint32(4, totalPcmBytes + 36, true);  // RIFF chunk size
+    v.setUint32(40, totalPcmBytes, true);       // data chunk size
+    return patched;
+}
+
 function initWorker() {
     if (worker) worker.terminate();
     worker = new Worker('js/libmpegh/worker.js');
@@ -29,19 +66,65 @@ function initWorker() {
             case 'stderr':
                 if (dom.config.stderr.selected) ui.log(msg.text, 'RAW');
                 break;
-            case 'done':
+
+            /* ── Streaming PCM from the C decoder ─────────────── */
+            case 'pcm_chunk':
+                pcmChunks.push(msg.data);
+                break;
+
+            case 'done': {
                 ui.log(`Finished: ${msg.filename}`);
-                dl.addDownload(msg.data, msg.filename, lastFrameCount);
+
+                /* Compute total PCM bytes from the actual chunks */
+                let totalPcmBytes = 0;
+                for (const chunk of pcmChunks) {
+                    totalPcmBytes += chunk.byteLength;
+                }
+
+                /* Use the C-generated WAV header (44 bytes) if available,
+                   with corrected size fields. Fall back to a generic header. */
+                let wavHeader;
+                if (msg.wavHeader && msg.wavHeader.byteLength >= 44) {
+                    wavHeader = fixWavHeaderSizes(
+                        msg.wavHeader.slice(0, 44), totalPcmBytes
+                    );
+                } else {
+                    wavHeader = buildFallbackWavHeader(totalPcmBytes);
+                }
+
+                /* Build the final WAV Blob: header + PCM chunks.
+                   Blob constructor takes references — no extra copy. */
+                const blob = new Blob(
+                    [wavHeader, ...pcmChunks],
+                    { type: 'audio/wav' }
+                );
+
+                /* Free chunk references — Blob now owns the data */
+                pcmChunks = [];
+
+                dl.addDownload(blob, msg.filename, lastFrameCount);
 
                 ui.updateQueueStatus(qIndex, 'finished');
                 qIndex++;
+
+                /* Layer 3: Terminate and re-create worker to release all
+                   Emscripten heap memory before the next file. */
+                worker.terminate();
+                worker = null;
                 runQueue();
                 break;
+            }
             case 'error':
                 ui.log(msg.text, 'ERROR');
                 dl.addError(queue[qIndex].name, msg.text);
-                ui.updateQueueStatus(qIndex, 'finished'); 
+
+                pcmChunks = [];
+
+                ui.updateQueueStatus(qIndex, 'finished');
                 qIndex++;
+
+                worker.terminate();
+                worker = null;
                 runQueue();
                 break;
         }
@@ -67,12 +150,25 @@ async function runQueue() {
         return;
     }
 
+    /* Layer 3: Ensure a fresh worker for each file */
+    if (!worker) {
+        initWorker();
+        await new Promise(resolve => {
+            const origHandler = worker.onmessage;
+            worker.onmessage = (e) => {
+                origHandler(e);
+                if (e.data.type === 'ready') resolve();
+            };
+        });
+    }
+
     const file = queue[qIndex];
     ui.updateQueueStatus(qIndex, 'processing');
     ui.log(`Loading ${file.name} (${qIndex + 1}/${queue.length})`);
     ui.setProcessingState(qIndex + 1, queue.length);
     perf.resetMonitor();
     lastFrameCount = 0;
+    pcmChunks = [];
 
     try {
         const buf = await file.arrayBuffer();
@@ -129,7 +225,9 @@ dom.dlAllBtn.addEventListener('click', async () => {
 
 dom.cancelBtn.addEventListener('click', () => {
     ui.log('Queue cancelled', 'WARN');
-    worker.terminate();
+    if (worker) worker.terminate();
+    worker = null;
+    pcmChunks = [];
     perf.stopMonitor();
     ui.finishJob("Cancelled", false, true);
     initWorker();

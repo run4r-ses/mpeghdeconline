@@ -9,4 +9,4 @@ This is a wrapper around libmpegh's testbench to provide MPEG-H 3D / 360 Reality
 This project is licensed under the MIT License.
 
 libmpegh is licensed under BSD-3-Clause-Clear License.
-For more information, see [LICENSE](https://github.com/ittiam-systems/libmpegh/blob/main/LICENSE)
+For more information, see [LICENSE](https://github.com/ittiam-systems/libmpegh/blob/main/LICENSE), [LICENSE2](https://github.com/ittiam-systems/libmpegh/blob/main/LICENSE2) and [README](https://github.com/ittiam-systems/libmpegh/blob/main/README.md)

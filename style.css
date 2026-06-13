@@ -95,10 +95,15 @@
 
 /* global */
 
+:root {
+    --md-ref-typeface-brand: 'Google Sans Flex', system-ui, sans-serif;
+    --md-ref-typeface-plain: 'Google Sans Flex', system-ui, sans-serif;
+}
+
 body {
     background-color: var(--md-sys-color-background);
     color: var(--md-sys-color-on-background);
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Google Sans Flex', system-ui, sans-serif;
     margin: 0;
 
     display: flex;
@@ -119,6 +124,7 @@ audio {
 h1 {
     color: var(--md-sys-color-on-surface);
     margin: 0;
+    font-variation-settings: 'opsz' 32, 'wght' 700;
 }
 
 /* layouts */
@@ -262,6 +268,12 @@ header {
 .file-area p {
     color: var(--md-sys-color-on-surface);
     margin: 0;
+    font-variation-settings: 'wght' 500;
+    transition: font-variation-settings 0.2s ease;
+}
+
+.file-area:hover p {
+    font-variation-settings: 'wght' 700;
 }
 
 .file-area small {
@@ -289,11 +301,12 @@ header {
     padding: 8px 12px;
     border-radius: 4px;
     animation: fadeScaleIn 0.17s ease-out forwards;
-    font-family: 'Roboto Mono', monospace;
+    font-family: 'Google Sans Code', monospace;
+    font-variation-settings: 'wght' 400;
     font-size: 13px;
     color: var(--md-sys-color-on-surface);
     user-select: none;
-    transition: background-color 0.1s;
+    transition: font-variation-settings 0.2s ease, background-color 0.1s;
 }
 
 .queue-left {
@@ -328,6 +341,7 @@ header {
 .queue-item.idle:hover {
     background-color: var(--md-sys-color-surface-container-highest);
     cursor: pointer;
+    font-variation-settings: 'wght' 600;
 }
 
 .queue-item.idle:hover .queue-icon {
@@ -371,7 +385,7 @@ header {
 }
 
 .download-filename {
-    font-family: 'Roboto Mono', monospace;
+    font-family: 'Google Sans Code', monospace;
     font-size: 14px;
     white-space: nowrap;
     overflow: hidden;
@@ -425,7 +439,7 @@ header {
 
 .perfbox-primary {
     font-weight: bold;
-    font-family: monospace;
+    font-family: 'Google Sans Code', monospace;
 }
 
 .perfbox-secondary {

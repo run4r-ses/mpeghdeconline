@@ -11,7 +11,8 @@ let lastFrameCount = 0;
 
 
 
-function initWorker() {
+function initWorker(isSilent = false) {
+    if (!isSilent) ui.setInitializingState();
     if (worker) worker.terminate();
     worker = new Worker('js/libmpegh/worker.js');
 
@@ -19,7 +20,7 @@ function initWorker() {
         const msg = e.data;
         switch (msg.type) {
             case 'ready':
-                ui.setReadyState();
+                if (!isSilent) ui.setReadyState();
                 ui.log('Worker is ready');
                 break;
             case 'progress':
@@ -83,7 +84,7 @@ async function runQueue() {
 
     /* Layer 3: Ensure a fresh worker for each file */
     if (!worker) {
-        initWorker();
+        initWorker(true);
         await new Promise(resolve => {
             const origHandler = worker.onmessage;
             worker.onmessage = (e) => {

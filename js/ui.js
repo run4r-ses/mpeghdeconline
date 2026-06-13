@@ -20,9 +20,21 @@ export function log(msg, type = 'INFO') {
             console.log(text);
     }
 }
+export function setInitializingState() {
+    dom.fileInput.disabled = true;
+    dom.fileArea.classList.add('disabled');
+    dom.optionsCard.classList.add('disabled-card');
+
+    dom.fileAreaText.style.display = "block";
+    dom.fileAreaText.textContent = "Worker is initializing...";
+    dom.fileNameDisplay.textContent = "Select input files";
+    dom.fileNameDisplay.style.color = "var(--md-sys-color-on-surface-variant)";
+}
+
 export function setReadyState() {
     dom.fileInput.disabled = false;
     dom.fileArea.classList.remove('disabled');
+    dom.optionsCard.classList.remove('disabled-card');
     dom.fileAreaIcon.textContent = "upload_file";
 
     toggleVisible(dom.startBtn, false);

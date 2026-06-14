@@ -28,7 +28,13 @@ export function addDownload(blob, filename, frameCount = 0) {
        chunks that composed it can be GC'd. */
     downloadCache.push({ name: filename, blobURL: url, size: blob.size });
 
-    const item = createEl('div', 'download-item');
+    const item = document.createElement('m3e-card');
+    item.variant = 'outlined';
+
+    const contentDiv = document.createElement('div');
+    contentDiv.slot = 'content';
+    contentDiv.className = 'card-content';
+
     const header = createEl('div', 'download-header');
 
     const textWrapper = createEl('div', '');
@@ -47,7 +53,8 @@ export function addDownload(blob, filename, frameCount = 0) {
 
     textWrapper.append(nameSpan, metaSpan);
 
-    const btn = document.createElement('md-filled-tonal-button');
+    const btn = document.createElement('m3e-button');
+    btn.variant = 'tonal';
     btn.style.flexShrink = "0";
     btn.onclick = () => {
         const a = document.createElement('a');
@@ -56,9 +63,9 @@ export function addDownload(blob, filename, frameCount = 0) {
         a.click();
     };
 
-    const icon = document.createElement('md-icon');
+    const icon = document.createElement('m3e-icon');
     icon.slot = "icon";
-    icon.textContent = "download";
+    icon.setAttribute('name', 'download');
 
     btn.append(icon, document.createTextNode(`Download \u2022 ${formatBytes(blob.size)} MB`));
 
@@ -68,7 +75,8 @@ export function addDownload(blob, filename, frameCount = 0) {
     audio.controls = true;
     audio.src = url;
 
-    item.append(header, audio);
+    contentDiv.append(header, audio);
+    item.append(contentDiv);
     dom.downloadArea.appendChild(item);
 
     updateButtons();
@@ -79,10 +87,14 @@ export function addError(filename, msg) {
         toggleVisible(dom.downloadArea, true, 'block');
     }
 
-    const item = createEl('div', 'download-item');
-    item.style.borderColor = 'var(--md-sys-color-error-container)';
-    item.style.backgroundColor = 'var(--md-sys-color-error-container)';
+    const item = document.createElement('m3e-card');
+    item.variant = 'filled';
+    item.style.setProperty('--m3e-card-container-color', 'var(--md-sys-color-error-container)');
     item.style.color = 'var(--md-sys-color-on-error-container)';
+
+    const contentDiv = document.createElement('div');
+    contentDiv.slot = 'content';
+    contentDiv.className = 'card-content';
 
     const header = createEl('div', 'download-header');
 
@@ -94,7 +106,8 @@ export function addError(filename, msg) {
     titleRow.style.alignItems = 'center';
     titleRow.style.gap = '8px';
 
-    const iconEl = createEl('span', 'material-symbols-outlined', 'error');
+    const iconEl = document.createElement('m3e-icon');
+    iconEl.setAttribute('name', 'error');
     iconEl.style.color = 'var(--md-sys-color-error)';
 
     const nameSpan = createEl('span', 'download-filename', filename);
@@ -110,7 +123,8 @@ export function addError(filename, msg) {
 
     textWrapper.append(titleRow, errorMsg);
     header.append(textWrapper);
-    item.append(header);
+    contentDiv.append(header);
+    item.append(contentDiv);
 
     dom.downloadArea.appendChild(item);
     updateButtons();
@@ -124,13 +138,11 @@ export async function clearAll() {
         updateButtons();
     }, 150);
 
-    /* Revoke all blob URLs to release the underlying Blob memory */
+    // Clear OPFS files
     for (const entry of downloadCache) {
         URL.revokeObjectURL(entry.blobURL);
     }
     downloadCache = [];
-
-    // Clear OPFS files
     try {
         const root = await navigator.storage.getDirectory();
         for await (const name of root.keys()) {
@@ -164,7 +176,6 @@ export async function downloadZip() {
     URL.revokeObjectURL(url);
 }
 
-// Clean up any leftover temp files in OPFS from previous aborted sessions on startup
 (async function cleanupStartupOPFS() {
     try {
         const root = await navigator.storage.getDirectory();

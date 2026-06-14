@@ -30,7 +30,7 @@ function initWorker(isSilent = false) {
                 break;
             case 'stdout':
             case 'stderr':
-                if (dom.config.stderr.selected) ui.log(msg.text, 'RAW');
+                if (dom.config.stderr.checked) ui.log(msg.text, 'RAW');
                 break;
 
             case 'done': {
@@ -38,7 +38,7 @@ function initWorker(isSilent = false) {
 
                 dl.addDownload(msg.file, msg.filename, lastFrameCount);
 
-                ui.updateQueueStatus(qIndex, 'finished');
+                ui.updateQueueStatus(qIndex, 'finished', lastFrameCount);
                 qIndex++;
 
                 /* Layer 3: Terminate and re-create worker to release all
@@ -52,7 +52,7 @@ function initWorker(isSilent = false) {
                 ui.log(msg.text, 'ERROR');
                 dl.addError(queue[qIndex].name, msg.text);
 
-                ui.updateQueueStatus(qIndex, 'finished');
+                ui.updateQueueStatus(qIndex, 'error', msg.text);
                 qIndex++;
 
                 worker.terminate();
@@ -113,7 +113,7 @@ async function runQueue() {
                 pcm: dom.config.pcm.value,
                 rate: dom.config.rate.value,
                 loudness: dom.config.loudness.value,
-                drc: dom.config.drc.value,
+                drc: dom.config.drc.value || '0',
             },
             extension: file.name.substring(file.name.lastIndexOf('.')),
             baseName: file.name.substring(0, file.name.lastIndexOf('.')) || file.name

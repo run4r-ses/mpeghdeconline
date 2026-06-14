@@ -6,32 +6,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MPEG-H 3D Web Decoder</title>
 
-    <link rel="stylesheet" href="theme/light.css">
-    <link rel="stylesheet" href="theme/dark.css" media="(prefers-color-scheme: dark)">
     <link rel="stylesheet" href="style.css">
 
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,ROND,wdth,wght@8..144,0..100,25..151,100..1000&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400..700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
         rel="stylesheet">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script type="module">
-        import 'https://esm.run/@material/web/all.js';
-        import { styles as typescaleStyles } from 'https://esm.run/@material/web/typography/md-typescale-styles.js';
-        document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
+    <script type="importmap">
+        {
+            "imports": {
+                "tslib": "https://cdn.jsdelivr.net/npm/tslib@2.8.1/+esm",
+                "lit": "https://cdn.jsdelivr.net/npm/lit@3.3.0/+esm",
+                "lit/": "https://cdn.jsdelivr.net/npm/lit@3.3.0/",
+                "lit-html": "https://cdn.jsdelivr.net/npm/lit-html@3.3.0/+esm",
+                "lit-html/directive.js": "https://cdn.jsdelivr.net/npm/lit-html@3.3.0/directive.js",
+                "lit-html/directives/if-defined.js": "https://cdn.jsdelivr.net/npm/lit-html@3.3.0/directives/if-defined.js",
+                "lit-html/directives/class-map.js": "https://cdn.jsdelivr.net/npm/lit-html@3.3.0/directives/class-map.js",
+                "@lit/reactive-element": "https://cdn.jsdelivr.net/npm/@lit/reactive-element@2.0.4/+esm",
+                "@lit/reactive-element/": "https://cdn.jsdelivr.net/npm/@lit/reactive-element@2.0.4/",
+                "@m3e/web/core": "https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/core.min.js",
+                "@m3e/web/core/a11y": "https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/core-a11y.min.js",
+                "@m3e/web/core/bidi": "https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/core-bidi.min.js",
+                "@m3e/web/core/anchoring": "https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/core-anchoring.min.js",
+                "@m3e/web/core/layout": "https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/core-layout.min.js",
+                "@m3e/web/core/platform": "https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/core-platform.min.js",
+                "@m3e/web/option": "https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/option.min.js"
+            }
+        }
     </script>
+        <script type="module" src="https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/progress-indicator.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/heading.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/list.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/theme.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/card.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/form-field.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/option.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/select.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/expansion-panel.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/button.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/icon-button.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/icon.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@m3e/web@2.5.11/dist/switch.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script type="module" src="js/index.js" defer></script>
     <script src="js/coi-serviceworker.min.js"></script>
+    <script>
+        customElements.define('option-desc', class extends HTMLElement {
+            constructor() {
+                super();
+                this.attachShadow({ mode: 'open' });
+            }
+            static get observedAttributes() {
+                return ['text'];
+            }
+            attributeChangedCallback() {
+                this.render();
+            }
+            connectedCallback() {
+                this.render();
+            }
+            render() {
+                const text = this.getAttribute('text') || '';
+                this.shadowRoot.innerHTML = `
+                    <style>
+                        :host {
+                            display: block;
+                            font-size: 11px;
+                            color: var(--md-sys-color-on-surface-variant, #79747e);
+                            font-weight: normal;
+                            margin-top: 2px;
+                            line-height: 1.2;
+                            white-space: normal;
+                        }
+                    </style>
+                    <span>${text}</span>
+                `;
+            }
+        });
+    </script>
 </head>
 
 <body>
+    <m3e-theme color="#5b5891" scheme="auto" motion="expressive">
     <div class="container">
         <header>
-            <h1 class="md-typescale-title-bold">MPEG-H 3D Web Decoder</h1>
+            <m3e-heading variant="headline" size="medium" level="1" emphasized>MPEG-H 3D Web Decoder</m3e-heading>
 
             <div class="perfbox-widget" id="perfWidget" style="display: none;">
-                <span class="material-symbols-outlined">speed</span>
+                <m3e-icon name="speed"></m3e-icon>
                 <div>
                     <div class="perfbox-primary" id="perfPrimary">0 fps</div>
                     <div class="perfbox-secondary">Real-time speed</div>
@@ -41,296 +105,241 @@
 
         <div class="content-grid">
             <div class="column-stack main-col">
-                <div class="card">
-                    <div class="file-area disabled">
+                <m3e-card variant="outlined">
+                    <div slot="content" class="card-content">
+                        <div class="file-area disabled">
                         <input type="file" id="fileInput" accept=".mp4,.m4a,.mhas" multiple disabled>
 
-                        <span class="material-symbols-outlined" id="fileAreaIcon"
-                            style="font-size: 40px;">upload_file</span>
+                        <m3e-icon id="fileAreaIcon" name="upload_file"
+                            style="font-size: 40px;"></m3e-icon>
 
                         <div class="file-text-wrapper">
-                            <p id="fileNameDisplay" class="md-typescale-title-medium">Select input files</p>
-                            <small class="md-typescale-body-small">Worker is initializing...</small>
+                            <p id="fileNameDisplay" class="m3e-typescale-title-medium">Select input files</p>
+                            <small class="m3e-typescale-body-small">Worker is initializing...</small>
                         </div>
                     </div>
 
-                    <div id="queueList" class="queue-list" style="display: none;"></div>
+                    <m3e-list id="queueList" style="display: none;"></m3e-list>
 
-                    <div style="display: flex; justify-content: flex-end;">
-                        <md-filled-button id="startBtn"
-                            style="display: none; width: 80px; height: 40px; margin-top: 0px;">
-                            <div style="display: flex;"><md-icon>play_arrow</md-icon></div>
-                        </md-filled-button>
+                    <div id="buttonContainer">
+                        <m3e-button id="startBtn" variant="filled"
+                            style="display: none; width: 80px; height: 40px;">
+                            <m3e-icon name="play_arrow"></m3e-icon>
+                        </m3e-button>
+                        <m3e-button id="cancelBtn" class="error-btn" variant="filled"
+                            style="display: none; height: 40px;">
+                            <m3e-icon slot="icon" name="close"></m3e-icon>
+                            Cancel
+                        </m3e-button>
                     </div>
 
-                    <div id="statusArea" style="display: none;">
-                        <div class="status-row">
-                            <div style="display: flex; flex-direction: column; gap: 4px;">
-                                <span id="statusText" class="md-typescale-title-medium">Processing...</span>
-                                <span id="progressText" class="md-typescale-label-medium">0 frames</span>
-                            </div>
-                            <md-filled-button id="cancelBtn" class="error-btn" style="display:none;">
-                                <md-icon slot="icon">close</md-icon>
-                                Cancel
-                            </md-filled-button>
-                        </div>
 
-                        <md-linear-progress id="progressBar" indeterminate></md-linear-progress>
-                    </div>
 
                     <div style="display: flex; justify-content: center; align-items: center; gap: 6px; color:gray;">
-                        <md-icon style="font-size: 18px;">info</md-icon>
-                        <span class="md-typescale-body-medium">
+                        <m3e-icon name="info" style="font-size: 18px;"></m3e-icon>
+                        <span class="m3e-typescale-body-medium">
                             All files are processed locally in your browser
                         </span>
                     </div>
-                </div>
+                    </div>
+                </m3e-card>
 
-                <div class="card" id="downloadCard">
-                    <div class="result-card-header">
+                <m3e-card variant="outlined" id="downloadCard">
+                    <div slot="header" class="result-card-header">
                         <div class="result-card-title">
-                            <md-icon style="font-size: 20px;">manufacturing</md-icon>
-                            <span class="md-typescale-title-medium">Decoded audio files</span>
+                            <m3e-icon name="cloud_done"></m3e-icon>
+                            <m3e-heading variant="title" size="medium">Decoded audio files</m3e-heading>
                         </div>
 
                         <div class="result-card-actions">
-                            <md-filled-tonal-button id="dlAllBtn" style="display: none;">
-                                <md-icon slot="icon">folder_zip</md-icon>
+                            <m3e-button id="dlAllBtn" variant="tonal" style="display: none;">
+                                <m3e-icon slot="icon" name="folder_zip"></m3e-icon>
                                 Download as ZIP
-                            </md-filled-tonal-button>
+                            </m3e-button>
 
-                            <md-filled-button id="clearAllBtn" class="error-btn" style="display: none;">
-                                <md-icon slot="icon">delete</md-icon>
-                                Clear
-                            </md-filled-button>
+                            <m3e-icon-button id="clearAllBtn" variant="standard" size="medium" style="display: none;">
+                                <m3e-icon name="clear_all"></m3e-icon>
+                            </m3e-icon-button>
                         </div>
                     </div>
 
-                    <div id="downloadArea"></div>
-                </div>
+                    <div slot="content" class="card-content">
+                        <div id="downloadArea"></div>
+                    </div>
+                </m3e-card>
             </div>
 
             <div class="column-stack side-col">
-                <div class="card disabled-card" id="optionsCard">
-                    <md-outlined-select label="Target output layout (CICP)" id="cicpSelect">
-                        <md-select-option value="1">
-                            <div slot="headline">Mono &bull; 1/0.0</div>
-                            <div slot="supporting-text">
-                                CICP 1 &ndash; C
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="2" selected>
-                            <div slot="headline">Stereo &bull; 2/0.0</div>
-                            <div slot="supporting-text">
-                                CICP 2 &ndash; L, R
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="13">
-                            <div slot="headline">22.2 surround &bull; 11/11.2</div>
-                            <div slot="supporting-text">
-                                CICP 13 &ndash; C, Lc, Rc, L, R, Lss, Rss, Lsr, Rsr, Cs, LFE, LFE2, Cv, Lv, Rv, Lvss,
-                                Rvss, Ts,
-                                Lvr, Rvr, Cvr, Cb, Lb, Rb
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="6">
-                            <div slot="headline">5.1 surround &bull; 3/2.1</div>
-                            <div slot="supporting-text">
-                                CICP 6 &ndash; C, L, R, Ls, Rs, LFE
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="12">
-                            <div slot="headline">7.1 surround &bull; 3/4.1</div>
-                            <div slot="supporting-text">
-                                CICP 12 &ndash; C, L, R, Ls, Rs, Lsr, Rsr, LFE
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="14">
-                            <div slot="headline">5.1.2 surround &bull; 5/2.1</div>
-                            <div slot="supporting-text">
-                                CICP 14 &ndash; C, L, R, Ls, Rs, LFE, Lv, Rv
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="16">
-                            <div slot="headline">5.1.4 surround &bull; 5/4.1</div>
-                            <div slot="supporting-text">
-                                CICP 16 &ndash; C, L, R, Ls, Rs, LFE, Lv, Rv, Lvs, Rvs
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="3">
-                            <div slot="headline">3/0.0</div>
-                            <div slot="supporting-text">
-                                CICP 3 &ndash; C, L, R
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="4">
-                            <div slot="headline">3/1.0</div>
-                            <div slot="supporting-text">
-                                CICP 4 &ndash; C, L, R, Cs
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="5">
-                            <div slot="headline">3/2.0</div>
-                            <div slot="supporting-text">
-                                CICP 5 &ndash; C, L, R, Ls, Rs
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="7">
-                            <div slot="headline">5/2.1</div>
-                            <div slot="supporting-text">
-                                CICP 7 &ndash; C, Lc, Rc, L, R, Ls, Rs, LFE
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="9">
-                            <div slot="headline">2/1.0</div>
-                            <div slot="supporting-text">
-                                CICP 9 &ndash; L, R, Cs
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="10">
-                            <div slot="headline">2/2.0</div>
-                            <div slot="supporting-text">
-                                CICP 10 &ndash; L, R, Ls, Rs
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="11">
-                            <div slot="headline">3/3.1</div>
-                            <div slot="supporting-text">
-                                CICP 11 &ndash; C, L, R, Ls, Rs, Cs, LFE
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="15">
-                            <div slot="headline">5/5.2</div>
-                            <div slot="supporting-text">
-                                CICP 15 &ndash; C, L, R, Lss, Rss, Ls, Rs, Lv, Rv, Cvr, LFE, LFE2
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="17">
-                            <div slot="headline">6/5.1</div>
-                            <div slot="supporting-text">
-                                CICP 17 &ndash; C, L, R, Ls, Rs, LFE, Lv, Rv, Cv, Lvs, Rvs, Ts
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="18">
-                            <div slot="headline">6/7.1</div>
-                            <div slot="supporting-text">
-                                CICP 18 &ndash; C, L, R, Ls, Rs, Lbs, Rbs, LFE, Lv, Rv, Cv, Lvs, Rvs, Ts
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="19">
-                            <div slot="headline">5/6.1</div>
-                            <div slot="supporting-text">
-                                CICP 19 &ndash; C, L, R, Lss, Rss, Lsr, Rsr, LFE, Lv, Rv, Lvr, Rvr
-                            </div>
-                        </md-select-option>
-                        <md-select-option value="20">
-                            <div slot="headline">7/6.1</div>
-                            <div slot="supporting-text">
-                                CICP 20 &ndash; C, Leos, Reos, L, R, Lss, Rss, Lsr, Rsr, LFE, Lv, Rv, Lvs, Rvs
-                            </div>
-                        </md-select-option>
-                    </md-outlined-select>
+                <m3e-card variant="outlined" class="disabled-card" id="optionsCard">
+                    <div slot="content" class="card-content">
+                    <m3e-form-field hide-subscript="always">
+                        <label slot="label" for="cicpSelect">Target output layout (CICP)</label>
+                        <m3e-select id="cicpSelect">
+                            <m3e-option value="1">
+                                <span class="option-title">Mono &bull; 1/0.0</span>
+                                <option-desc text="CICP 1 &ndash; C"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="2" selected>
+                                <span class="option-title">Stereo &bull; 2/0.0</span>
+                                <option-desc text="CICP 2 &ndash; L, R"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="13">
+                                <span class="option-title">22.2 surround &bull; 11/11.2</span>
+                                <option-desc text="CICP 13 &ndash; C, Lc, Rc, L, R, Lss, Rss, Lsr, Rsr, Cs, LFE, LFE2, Cv, Lv, Rv, Lvss, Rvss, Ts, Lvr, Rvr, Cvr, Cb, Lb, Rb"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="6">
+                                <span class="option-title">5.1 surround &bull; 3/2.1</span>
+                                <option-desc text="CICP 6 &ndash; C, L, R, Ls, Rs, LFE"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="12">
+                                <span class="option-title">7.1 surround &bull; 3/4.1</span>
+                                <option-desc text="CICP 12 &ndash; C, L, R, Ls, Rs, Lsr, Rsr, LFE"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="14">
+                                <span class="option-title">5.1.2 surround &bull; 5/2.1</span>
+                                <option-desc text="CICP 14 &ndash; C, L, R, Ls, Rs, LFE, Lv, Rv"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="16">
+                                <span class="option-title">5.1.4 surround &bull; 5/4.1</span>
+                                <option-desc text="CICP 16 &ndash; C, L, R, Ls, Rs, LFE, Lv, Rv, Lvs, Rvs"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="3">
+                                <span class="option-title">3/0.0</span>
+                                <option-desc text="CICP 3 &ndash; C, L, R"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="4">
+                                <span class="option-title">3/1.0</span>
+                                <option-desc text="CICP 4 &ndash; C, L, R, Cs"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="5">
+                                <span class="option-title">3/2.0</span>
+                                <option-desc text="CICP 5 &ndash; C, L, R, Ls, Rs"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="7">
+                                <span class="option-title">5/2.1</span>
+                                <option-desc text="CICP 7 &ndash; C, Lc, Rc, L, R, Ls, Rs, LFE"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="9">
+                                <span class="option-title">2/1.0</span>
+                                <option-desc text="CICP 9 &ndash; L, R, Cs"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="10">
+                                <span class="option-title">2/2.0</span>
+                                <option-desc text="CICP 10 &ndash; L, R, Ls, Rs"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="11">
+                                <span class="option-title">3/3.1</span>
+                                <option-desc text="CICP 11 &ndash; C, L, R, Ls, Rs, Cs, LFE"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="15">
+                                <span class="option-title">5/5.2</span>
+                                <option-desc text="CICP 15 &ndash; C, L, R, Lss, Rss, Ls, Rs, Lv, Rv, Cvr, LFE, LFE2"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="17">
+                                <span class="option-title">6/5.1</span>
+                                <option-desc text="CICP 17 &ndash; C, L, R, Ls, Rs, LFE, Lv, Rv, Cv, Lvs, Rvs, Ts"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="18">
+                                <span class="option-title">6/7.1</span>
+                                <option-desc text="CICP 18 &ndash; C, L, R, Ls, Rs, Lbs, Rbs, LFE, Lv, Rv, Cv, Lvs, Rvs, Ts"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="19">
+                                <span class="option-title">5/6.1</span>
+                                <option-desc text="CICP 19 &ndash; C, L, R, Lss, Rss, Lsr, Rsr, LFE, Lv, Rv, Lvr, Rvr"></option-desc>
+                            </m3e-option>
+                            <m3e-option value="20">
+                                <span class="option-title">7/6.1</span>
+                                <option-desc text="CICP 20 &ndash; C, Leos, Reos, L, R, Lss, Rss, Lsr, Rsr, LFE, Lv, Rv, Lvs, Rvs"></option-desc>
+                            </m3e-option>
+                        </m3e-select>
+                    </m3e-form-field>
 
-                    <details>
-                        <summary>Advanced options</summary>
+                    <m3e-expansion-panel>
+                        <span slot="header">Advanced options</span>
                         <div class="advanced-grid">
-                            <md-outlined-select label="PCM word size" id="pcmSize" autocomplete="off">
-                                <md-select-option value="">
-                                    <div slot="headline">Default</div>
-                                </md-select-option>
-                                <md-select-option value="16">
-                                    <div slot="headline">16-bit</div>
-                                </md-select-option>
-                                <md-select-option value="24">
-                                    <div slot="headline">24-bit</div>
-                                </md-select-option>
-                                <md-select-option value="32">
-                                    <div slot="headline">32-bit</div>
-                                </md-select-option>
-                            </md-outlined-select>
+                            <m3e-form-field hide-subscript="always">
+                                <label slot="label" for="pcmSize">PCM word size</label>
+                                <m3e-select id="pcmSize" autocomplete="off">
+                                    <m3e-option value="">Default</m3e-option>
+                                    <m3e-option value="16">16-bit</m3e-option>
+                                    <m3e-option value="24">24-bit</m3e-option>
+                                    <m3e-option value="32">32-bit</m3e-option>
+                                </m3e-select>
+                            </m3e-form-field>
 
-                            <md-outlined-select label="Output sample rate" id="sampleRate" autocomplete="off">
-                                <md-select-option value="">
-                                    <div slot="headline">Native</div>
-                                </md-select-option>
-                                <md-select-option value="44100">
-                                    <div slot="headline">44100 Hz</div>
-                                </md-select-option>
-                                <md-select-option value="48000">
-                                    <div slot="headline">48000 Hz</div>
-                                </md-select-option>
-                                <md-select-option value="96000">
-                                    <div slot="headline">96000 Hz</div>
-                                </md-select-option>
-                            </md-outlined-select>
+                            <m3e-form-field hide-subscript="always">
+                                <label slot="label" for="sampleRate">Output sample rate</label>
+                                <m3e-select id="sampleRate" autocomplete="off">
+                                    <m3e-option value="">Native</m3e-option>
+                                    <m3e-option value="44100">44100 Hz</m3e-option>
+                                    <m3e-option value="48000">48000 Hz</m3e-option>
+                                    <m3e-option value="96000">96000 Hz</m3e-option>
+                                </m3e-select>
+                            </m3e-form-field>
 
-                            <md-outlined-text-field label="Target loudness (dB)" placeholder="-24" type="number"
-                                id="targetLoudness"></md-outlined-text-field>
+                            <m3e-form-field hide-subscript="always">
+                                <label slot="label" for="targetLoudness">Target loudness (dB)</label>
+                                <input id="targetLoudness" placeholder="-24" type="number" autocomplete="off" />
+                            </m3e-form-field>
 
-                            <md-outlined-select label="DRC effect type" id="drcEffect" autocomplete="off">
-                                <md-select-option value="0">
-                                    <div slot="headline">None</div>
-                                </md-select-option>
-
-                                <md-select-option value="1">
-                                    <div slot="headline">Night</div>
-                                    <div slot="supporting-text">Reduced dynamic range for quiet listening</div>
-                                </md-select-option>
-
-                                <md-select-option value="2">
-                                    <div slot="headline">Noisy</div>
-                                    <div slot="supporting-text">Enhanced clarity in loud environments</div>
-                                </md-select-option>
-
-                                <md-select-option value="3">
-                                    <div slot="headline">Limited</div>
-                                    <div slot="supporting-text">Strong dynamic range compression</div>
-                                </md-select-option>
-
-                                <md-select-option value="4">
-                                    <div slot="headline">Low Level</div>
-                                    <div slot="supporting-text">Optimized for very low playback levels</div>
-                                </md-select-option>
-
-                                <md-select-option value="5">
-                                    <div slot="headline">Dialog</div>
-                                    <div slot="supporting-text">Dialog enhancement</div>
-                                </md-select-option>
-
-                                <md-select-option value="6">
-                                    <div slot="headline">General Compression</div>
-                                    <div slot="supporting-text">Balanced dynamic range control</div>
-                                </md-select-option>
-
-                                <md-select-option value="7">
-                                    <div slot="headline">Expand</div>
-                                    <div slot="supporting-text">Increase dynamic range</div>
-                                </md-select-option>
-
-                                <md-select-option value="8">
-                                    <div slot="headline">Artistic</div>
-                                    <div slot="supporting-text">Creator-intended dynamics</div>
-                                </md-select-option>
-                            </md-outlined-select>
+                            <m3e-form-field hide-subscript="always">
+                                <label slot="label" for="drcEffect">DRC effect type</label>
+                                <m3e-select id="drcEffect" autocomplete="off">
+                                    <m3e-option value="">None</m3e-option>
+                                    <m3e-option value="1">
+                                        <span class="option-title">Night</span>
+                                        <option-desc text="Reduced dynamic range for quiet listening"></option-desc>
+                                    </m3e-option>
+                                    <m3e-option value="2">
+                                        <span class="option-title">Noisy</span>
+                                        <option-desc text="Enhanced clarity in loud environments"></option-desc>
+                                    </m3e-option>
+                                    <m3e-option value="3">
+                                        <span class="option-title">Limited</span>
+                                        <option-desc text="Strong dynamic range compression"></option-desc>
+                                    </m3e-option>
+                                    <m3e-option value="4">
+                                        <span class="option-title">Low Level</span>
+                                        <option-desc text="Optimized for very low playback levels"></option-desc>
+                                    </m3e-option>
+                                    <m3e-option value="5">
+                                        <span class="option-title">Dialog</span>
+                                        <option-desc text="Dialog enhancement"></option-desc>
+                                    </m3e-option>
+                                    <m3e-option value="6">
+                                        <span class="option-title">General Compression</span>
+                                        <option-desc text="Balanced dynamic range control"></option-desc>
+                                    </m3e-option>
+                                    <m3e-option value="7">
+                                        <span class="option-title">Expand</span>
+                                        <option-desc text="Increase dynamic range"></option-desc>
+                                    </m3e-option>
+                                    <m3e-option value="8">
+                                        <span class="option-title">Artistic</span>
+                                        <option-desc text="Creator-intended dynamics"></option-desc>
+                                    </m3e-option>
+                                </m3e-select>
+                            </m3e-form-field>
 
                             <label class="switch-wrapper">
-                                <md-switch id="toggleStderr" autocomplete="off"></md-switch>
-                                <span class="md-typescale-body-large">Print stderr to logs</span>
+                                <m3e-switch id="toggleStderr" autocomplete="off"></m3e-switch>
+                                <span class="m3e-typescale-body-large">Print stderr to logs</span>
                             </label>
 
-                            <md-filled-tonal-button id="erudaBtn">
-                                <md-icon slot="icon">bug_report</md-icon>
+                            <m3e-button id="erudaBtn" variant="tonal">
+                                <m3e-icon slot="icon" name="bug_report"></m3e-icon>
                                 <span class="erudaStatus">Load Eruda</span>
-                            </md-filled-tonal-button>
+                            </m3e-button>
                         </div>
-                    </details>
-                </div>
+                    </m3e-expansion-panel>
+                    </div>
+                </m3e-card>
             </div>
         </div>
 
         <div style="display: flex; justify-content: center; align-items: center; gap: 6px; color: gray;">
-            <md-icon style="font-size: 16px;">copyright</md-icon>
-            <span class="md-typescale-body-small">
+            <m3e-icon name="copyright" style="font-size: 16px;"></m3e-icon>
+            <span class="m3e-typescale-body-small">
                 This website uses
                 <a href="https://github.com/ittiam-systems/libmpegh" target="_blank" rel="noopener">
                     libmpegh</a>
@@ -347,6 +356,7 @@
             </span>
         </div>
     </div>
+    </m3e-theme>
 </body>
 
 </html>
